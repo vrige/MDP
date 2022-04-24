@@ -73,23 +73,3 @@ plt.show()
 
 exit()
 
-#chem_models = my_sciexpem.filterDatabase(model_name='ChemModel')
-#for model in chem_models:
-#    print("Model Name:", model.name)
-
-#my_model = my_sciexpem.filterDatabase(model_name='ChemModel', name='CRECK_2003_SYNGAS')[0]
-#my_experiment = my_sciexpem.filterDatabase(model_name='Experiment', fileDOI__contains='zenodo', status='verified')
-
-#my_experiment_execute = my_sciexpem.filterDatabase(model_name='Execution')
-
-#l = [exp for exp in my_experiment if exp not in [a.experiment for a in my_experiment_execute]]
-#print(l)
-
-#import time
-#for e in my_experiment:
-#    for m in chem_models:
-#        my_sciexpem.startSimulation(experiment=e, chemModel=m, verbose=True)
-#        time.sleep(0.5)
-#
-#my_sciexpem.startSimulation(experiment=329, chemModel=chem_models[0], verbose=True)
-
