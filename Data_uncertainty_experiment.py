@@ -1,7 +1,8 @@
+from cmath import exp
 import numpy as np
 from matplotlib import pyplot as plt
 from SciExpeM_API.SciExpeM import SciExpeM
-import scipy.stats
+from scipy.stats import norm
 
 #my_sciexpem = SciExpeM(username='alexandersebastian.bjorklund', password='mdp2022_')
 #print("My token is:", my_sciexpem.user.token)
@@ -42,10 +43,8 @@ exp_data = np.column_stack((exp_data_x, exp_data_norm_y))
 exp_data = exp_data[np.argsort(exp_data[:, 0])].T #Sorting x axis in ascending order
 exec_data = np.column_stack((exec_data_x, exec_data_norm_y)).T
 
-exp_std = np.std(exp_data[1])
-
 #Approximating a line between every point in execution data and taking the vertical distance to the lines fro every experiment data point
-res = np.array([exp_data[0],np.zeros(len(exp_data[0]))])
+diffs = np.zeros(len(exp_data[0]))
 k = 0
 for i in range(0, len(exec_data[0])-1):
     for j in range(k, len(exp_data[0])):
@@ -53,18 +52,30 @@ for i in range(0, len(exec_data[0])-1):
             p = np.polyfit(exec_data[0,i:i+2], exec_data[1,i:i+2], 1)
             fn = np.poly1d(p)
             diff = np.abs(exp_data[1,j] - fn(exp_data[0,j])) #Calculates vertical distance between experiment data and polyfit line
-            #print(scipy.stats.norm(fn(exp_data[0,j]), exp_std).cdf(exp_data[1,j]))
-            res[1,j] = diff
+            diffs[j] = diff
         else:
             k = j
             break
+
+
+wanted_mean = 0 #The mean is 0 because the distance is 0 if the experiment data point is on the model
+z_scores = (diffs-wanted_mean)/np.std(diffs)
+
+max_value = 3 #0 as min and 3 as max value, because 3*std is when the value is "outside" the normal distribution
+min_value = 0
+z_scores_norm = (z_scores -min_value)/(max_value-min_value) 
+uncertainty = np.array([exp_data_x, exp_data_y, 1-z_scores_norm])
 
 #Plot data
 plt.clf
 plt.figure(1)
 plt.plot(exec_data[0], exec_data[1], '--', label='Model')
 plt.plot(exp_data[0], exp_data[1], '.', label='Experiment')
-plt.plot(res[0], res[1], label='test')
+for i in range(0,len(uncertainty[2])):
+    if uncertainty[2,i] <= 0:
+        plt.annotate("Outlier", (exp_data[0,i],exp_data[1,i]))
+    else:
+        plt.annotate("{:.2f}".format(uncertainty[2,i]), (exp_data[0,i],exp_data[1,i]))
 plt.title("Plot of experiment data and model")
 plt.xlabel("Temperature [K]")
 plt.ylabel("Ignition delay [us]")
