@@ -15,33 +15,38 @@ def datastrToArray(str):
 def normalizeArray(ar):
     return (ar - np.amin(ar))/(np.amax(ar)- np.amin(ar))
 
+experiment_id = '201'
+chem_model = 24
+execution_id = '4366'
+
 my_sciexpem = SciExpeM(token='7df1e52b17c0bffb5daeb0448d8854c3d07c3665')
 my_sciexpem.testConnection(verbose = True)
 
-my_exp = my_sciexpem.filterDatabase(model_name = 'Experiment', id = '201')[0]
-my_sciexpem.initializeSimulation(experiment=my_exp.id, chemModel=24, verbose = True)
-my_execution = my_sciexpem.filterDatabase(model_name='Execution', id='4366')[0]
+my_exp = my_sciexpem.filterDatabase(model_name = 'Experiment', id = experiment_id)[0]
+my_sciexpem.initializeSimulation(experiment=my_exp.id, chemModel=chem_model, verbose = True)
+my_execution = my_sciexpem.filterDatabase(model_name='Execution', id=execution_id)[0]
 
-#print(my_execution.chemModel.name)
-#print(my_execution.execution_columns[1].data)
 
 #Format execution data into numpy arrays
 exec_data_x = datastrToArray(my_execution.execution_columns[0].data)
 exec_data_y = datastrToArray(my_execution.execution_columns[1].data)
+exec_data_norm_x = normalizeArray(exec_data_x)
 exec_data_norm_y = normalizeArray(exec_data_y)
 
 #Format experiment data into numpy arrays
 exp_data_x = np.array(my_execution.experiment.data_columns[1].data) 
 exp_data_y = np.array(my_execution.experiment.data_columns[0].data)
+exp_data_norm_x = normalizeArray(exp_data_x)
 exp_data_norm_y = normalizeArray(exp_data_y)
 
 #Formatting experiment data in ascending order
-exp_data_x = np.flip(exp_data_x)
+exp_data_norm_x = np.flip(exp_data_norm_x)
 exp_data_norm_y = np.flip(exp_data_norm_y)
 
-exp_data = np.column_stack((exp_data_x, exp_data_norm_y))
+exp_data = np.column_stack((exp_data_norm_x, exp_data_norm_y))
 exp_data = exp_data[np.argsort(exp_data[:, 0])].T #Sorting x axis in ascending order
-exec_data = np.column_stack((exec_data_x, exec_data_norm_y)).T
+exec_data = np.column_stack((exec_data_norm_x, exec_data_norm_y))
+exec_data = exec_data[np.argsort(exec_data[:, 0])].T #Sorting x axis in ascending order
 
 #Approximating a line between every point in execution data and taking the vertical distance to the lines fro every experiment data point
 diffs = np.zeros(len(exp_data[0]))
@@ -73,12 +78,12 @@ plt.plot(exec_data[0], exec_data[1], '--', label='Model')
 plt.plot(exp_data[0], exp_data[1], '.', label='Experiment')
 for i in range(0,len(uncertainty[2])):
     if uncertainty[2,i] <= 0:
-        plt.annotate("Outlier", (exp_data[0,i],exp_data[1,i]))
+        plt.annotate("Outlier ({:.2f})".format(uncertainty[2,i]), (exp_data[0,i],exp_data[1,i]))
     else:
         plt.annotate("{:.2f}".format(uncertainty[2,i]), (exp_data[0,i],exp_data[1,i]))
 plt.title("Plot of experiment data and model")
-plt.xlabel("Temperature [K]")
-plt.ylabel("Ignition delay [us]")
+plt.xlabel("Normalized Temperature")
+plt.ylabel("Normalized Ignition delay")
 plt.legend(loc="upper right")
 plt.show()
 
