@@ -3,88 +3,81 @@ import numpy as np
 from matplotlib import pyplot as plt
 from SciExpeM_API.SciExpeM import SciExpeM
 from scipy.stats import norm
+from Calculate_uncertainty import CalculateUncertainty, PlotData, normalizeArray
+
 
 #my_sciexpem = SciExpeM(username='alexandersebastian.bjorklund', password='mdp2022_')
 #print("My token is:", my_sciexpem.user.token)
 
-def datastrToArray(str): 
-    values_str = str.replace('[', '').replace(']', '').split(', ')
-    values = [float(i) for i in values_str]
-    return np.array(values)
-
-def normalizeArray(ar):
-    return (ar - np.amin(ar))/(np.amax(ar)- np.amin(ar))
-
-experiment_id = '201'
-chem_model = 24
-execution_id = '4366'
-
 my_sciexpem = SciExpeM(token='7df1e52b17c0bffb5daeb0448d8854c3d07c3665')
 my_sciexpem.testConnection(verbose = True)
 
-my_exp = my_sciexpem.filterDatabase(model_name = 'Experiment', id = experiment_id)[0]
-my_sciexpem.initializeSimulation(experiment=my_exp.id, chemModel=chem_model, verbose = True)
-my_execution = my_sciexpem.filterDatabase(model_name='Execution', id=execution_id)[0]
+#Test CalculateUncertainty with only one experiment
+#my_exp = my_sciexpem.filterDatabase(model_name = 'Experiment', id = '201')[0]
+#my_sciexpem.initializeSimulation(experiment=my_exp.id, chemModel=24, verbose = True)
+#my_execution = my_sciexpem.filterDatabase(model_name='Execution', id='4366')[0]
+#uncertainty,exec_data, test = CalculateUncertainty(my_execution)
+#PlotData(exec_data,uncertainty)
 
+my_experiments = my_sciexpem.filterDatabase(model_name = 'Experiment', experiment_type='ignition delay measurement', fuels=['H2'])
 
-#Format execution data into numpy arrays
-exec_data_x = datastrToArray(my_execution.execution_columns[0].data)
-exec_data_y = datastrToArray(my_execution.execution_columns[1].data)
-exec_data_norm_x = normalizeArray(exec_data_x)
-exec_data_norm_y = normalizeArray(exec_data_y)
+#Filtering the database for experiements with the experiment type "ignition delay measurement" and fuels H2
+exec_list = []
+for exp in my_experiments:
+    my_executions = my_sciexpem.filterDatabase(model_name='Execution', experiment=exp.id)
+    for exec in my_executions:
+        if exec.chemModel.name == 'CRECK_2100_PAH_2110_AN':
+            exec_list.append(exec)
 
-#Format experiment data into numpy arrays
-exp_data_x = np.array(my_execution.experiment.data_columns[1].data) 
-exp_data_y = np.array(my_execution.experiment.data_columns[0].data)
-exp_data_norm_x = normalizeArray(exp_data_x)
-exp_data_norm_y = normalizeArray(exp_data_y)
+#Calculating the uncertanties for the experiment data
+exp_uncertanties = []
+exec_data_list = []
+errors = []
+year_uncer = {}
+for i in range(0,len(exec_list)):
+    uncertainty, exec_data, diffs = CalculateUncertainty(exec_list[i])
+    exp_uncertanties.append(uncertainty)
+    exec_data_list.append(exec_data)
+    errors.append(diffs)
 
-#Formatting experiment data in ascending order
-exp_data_norm_x = np.flip(exp_data_norm_x)
-exp_data_norm_y = np.flip(exp_data_norm_y)
+    #Collect year and corresponding uncertainty data
+    if exec_list[i].experiment.file_paper.year not in year_uncer.keys():
+        year_uncer[exec_list[i].experiment.file_paper.year] = uncertainty[2]
+    else:
+        year_uncer[exec_list[i].experiment.file_paper.year] = np.append(year_uncer[exec_list[i].experiment.file_paper.year], uncertainty[2])
 
-exp_data = np.column_stack((exp_data_norm_x, exp_data_norm_y))
-exp_data = exp_data[np.argsort(exp_data[:, 0])].T #Sorting x axis in ascending order
-exec_data = np.column_stack((exec_data_norm_x, exec_data_norm_y))
-exec_data = exec_data[np.argsort(exec_data[:, 0])].T #Sorting x axis in ascending order
+#Checking if there are big changes in average uncertainty between years
+for key, value in year_uncer.items():
+    avg = np.average(value)
+    year_uncer[key] = np.average(value)
 
-#Approximating a line between every point in execution data and taking the vertical distance to the lines fro every experiment data point
-diffs = np.zeros(len(exp_data[0]))
-k = 0
-for i in range(0, len(exec_data[0])-1):
-    for j in range(k, len(exp_data[0])):
-        if exp_data[0,j] >= exec_data[0,i] and exp_data[0,j] <= exec_data[0,i+1]:
-            p = np.polyfit(exec_data[0,i:i+2], exec_data[1,i:i+2], 1)
-            fn = np.poly1d(p)
-            diff = np.abs(exp_data[1,j] - fn(exp_data[0,j])) #Calculates vertical distance between experiment data and polyfit line
-            diffs[j] = diff
-        else:
-            k = j
-            break
+years = list(year_uncer.keys())
+values = list(year_uncer.values())
 
-
-wanted_mean = 0 #The mean is 0 because the distance is 0 if the experiment data point is on the model
-z_scores = (diffs-wanted_mean)/np.std(diffs)
-
-max_value = 3 #0 as min and 3 as max value, because 3*std is when the value is "outside" the normal distribution
-min_value = 0
-z_scores_norm = (z_scores -min_value)/(max_value-min_value) 
-uncertainty = np.array([exp_data_x, exp_data_y, 1-z_scores_norm])
-
-#Plot data
 plt.clf
 plt.figure(1)
-plt.plot(exec_data[0], exec_data[1], '--', label='Model')
-plt.plot(exp_data[0], exp_data[1], '.', label='Experiment')
-for i in range(0,len(uncertainty[2])):
-    if uncertainty[2,i] <= 0:
-        plt.annotate("Outlier ({:.2f})".format(uncertainty[2,i]), (exp_data[0,i],exp_data[1,i]))
-    else:
-        plt.annotate("{:.2f}".format(uncertainty[2,i]), (exp_data[0,i],exp_data[1,i]))
-plt.title("Plot of experiment data and model")
-plt.xlabel("Normalized Temperature")
-plt.ylabel("Normalized Ignition delay")
-plt.legend(loc="upper right")
+plt.bar(years, values)
+plt.title("Uncertainty by year of paper")
+plt.xlabel("Year")
+plt.ylabel("Average of uncertainty")
+plt.show()
+
+#Checking that the errors follow a standard distribution
+errors_np = np.array(errors, dtype=object)
+stack_errors = np.hstack(errors_np)
+
+print("The standard deviation of the errors/distances {:.2f}".format(np.std(stack_errors)))
+print("The mean of the errors/distances {:.2f}".format(np.std(stack_errors)))
+
+rng = np.arange(np.amin(stack_errors), np.amax(stack_errors), 0.1) #Creating range for gaussian curve for reference
+
+plt.clf
+plt.figure(2)
+plt.hist(stack_errors, bins=20, rwidth=0.8, density=True)
+plt.plot(rng, norm.pdf(rng, np.mean(stack_errors), np.std(stack_errors)))
+plt.title("Histogram of distances between experiment data and model")
+plt.xlabel("Euqlidian distance")
+plt.ylabel("Number of instances")
 plt.show()
 
 exit()
