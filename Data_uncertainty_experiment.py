@@ -1,8 +1,9 @@
 from cmath import exp
 import numpy as np
 from matplotlib import pyplot as plt
+import pylab
 from SciExpeM_API.SciExpeM import SciExpeM
-from scipy.stats import norm
+from scipy.stats import norm, probplot, shapiro
 from Calculate_uncertainty import CalculateUncertainty, PlotData, normalizeArray
 
 
@@ -80,5 +81,11 @@ plt.xlabel("Euqlidian distance")
 plt.ylabel("Number of instances")
 plt.show()
 
+shapiro_test = shapiro(rng)
+print("Statistics: ", shapiro_test.statistic)
+#Null hypothesis H0: error is normally distributed
+print("Pvalue: ", shapiro_test.pvalue)
+probplot(rng, dist="norm", plot=pylab)
+pylab.show()
 exit()
 
