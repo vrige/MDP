@@ -14,7 +14,7 @@ def CalculateUncertainty(my_execution):
     #Format execution data into numpy arrays
     exec_data_x = my_execution.execution_columns[0].data
     exec_data_y = my_execution.execution_columns[1].data
-    if (my_execution.execution_columns[0].data is str()):
+    if (isinstance(my_execution.execution_columns[0].data, str)):
         exec_data_x = datastrToArray(my_execution.execution_columns[0].data)
         exec_data_y = datastrToArray(my_execution.execution_columns[1].data)
     exec_data_norm_x = normalizeArray(exec_data_x)
@@ -23,11 +23,9 @@ def CalculateUncertainty(my_execution):
     #Format experiment data into numpy arrays
     exp_data_x = my_execution.experiment.data_columns[1].data
     exp_data_y = my_execution.experiment.data_columns[0].data
-    if (my_execution.experiment.data_columns[1].data is str()):
-        exp_data_x = np.array(my_execution.experiment.data_columns[1].data)
-        exp_data_y = np.array(my_execution.experiment.data_columns[0].data)
-    exp_data_x = np.array(my_execution.experiment.data_columns[1].data) 
-    exp_data_y = np.array(my_execution.experiment.data_columns[0].data)
+    if (isinstance(my_execution.experiment.data_columns[1].data, str)):
+        exp_data_x = datastrToArray(my_execution.experiment.data_columns[1].data)
+        exp_data_y = datastrToArray(my_execution.experiment.data_columns[0].data)
     exp_data_norm_x = normalizeArray(exp_data_x)
     exp_data_norm_y = normalizeArray(exp_data_y)
 
