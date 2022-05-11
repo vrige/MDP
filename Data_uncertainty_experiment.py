@@ -46,6 +46,9 @@ for i in range(0,len(exec_list)):
         year_uncer[exec_list[i].experiment.file_paper.year] = uncertainty[2]
     else:
         year_uncer[exec_list[i].experiment.file_paper.year] = np.append(year_uncer[exec_list[i].experiment.file_paper.year], uncertainty[2])
+#TEST
+#for i in range(len(exp_uncertanties)):
+#    PlotData(exec_data_list[i], exp_uncertanties[i])
 
 #Checking if there are big changes in average uncertainty between years
 for key, value in year_uncer.items():
@@ -68,7 +71,7 @@ errors_np = np.array(errors, dtype=object)
 stack_errors = np.hstack(errors_np)
 
 print("The standard deviation of the errors/distances {:.2f}".format(np.std(stack_errors)))
-print("The mean of the errors/distances {:.2f}".format(np.std(stack_errors)))
+print("The mean of the errors/distances {:.2f}".format(np.mean(stack_errors)))
 
 rng = np.arange(np.amin(stack_errors), np.amax(stack_errors), 0.1) #Creating range for gaussian curve for reference
 

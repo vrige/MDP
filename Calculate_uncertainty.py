@@ -9,8 +9,38 @@ def datastrToArray(str):
 def normalizeArray(ar):
     return (ar - np.amin(ar))/(np.amax(ar)- np.amin(ar))
 
-
 def CalculateUncertainty(my_execution):
+    exp_data, exec_data = FormatData(my_execution)
+
+    diffs = CalculateErrors(exp_data, exec_data)
+
+    wanted_mean = 0 #The mean is 0 because the distance is 0 if the experiment data point is on the model
+    z_scores = (diffs-wanted_mean)/np.std(diffs)
+
+    max_value = 3 #0 as min and 3 as max value, because 3*std is when the value is "outside" the normal distribution
+    min_value = 0
+    z_scores_norm = (np.abs(z_scores) -min_value)/(max_value-min_value) 
+    uncertainty = np.array([exp_data[0], exp_data[1], 1-z_scores_norm])
+
+    return uncertainty, exec_data, diffs
+
+def CalculateErrors(exp_data, exec_data):
+    #Approximating a line between every point in execution data and taking the vertical distance to the lines fro every experiment data point
+    diffs = np.zeros(len(exp_data[0]))
+    k = 0
+    for i in range(0, len(exec_data[0])-1):
+        for j in range(k, len(exp_data[0])):
+            if exp_data[0,j] >= exec_data[0,i] and exp_data[0,j] <= exec_data[0,i+1]:
+                p = np.polyfit(exec_data[0,i:i+2], exec_data[1,i:i+2], 1)
+                fn = np.poly1d(p)
+                diff = exp_data[1,j] - fn(exp_data[0,j]) #Calculates vertical distance between experiment data and polyfit line
+                diffs[j] = diff
+            else:
+                k = j
+                break
+    return diffs
+
+def FormatData(my_execution):
     #Format execution data into numpy arrays
     exec_data_x = my_execution.execution_columns[0].data
     exec_data_y = my_execution.execution_columns[1].data
@@ -33,30 +63,8 @@ def CalculateUncertainty(my_execution):
     exp_data = exp_data[np.argsort(exp_data[:, 0])].T #Sorting in ascending order
     exec_data = np.column_stack((exec_data_norm_x, exec_data_norm_y))
     exec_data = exec_data[np.argsort(exec_data[:, 0])].T #Sorting in ascending order
-
-    #Approximating a line between every point in execution data and taking the vertical distance to the lines fro every experiment data point
-    diffs = np.zeros(len(exp_data[0]))
-    k = 0
-    for i in range(0, len(exec_data[0])-1):
-        for j in range(k, len(exp_data[0])):
-            if exp_data[0,j] >= exec_data[0,i] and exp_data[0,j] <= exec_data[0,i+1]:
-                p = np.polyfit(exec_data[0,i:i+2], exec_data[1,i:i+2], 1)
-                fn = np.poly1d(p)
-                diff = exp_data[1,j] - fn(exp_data[0,j]) #Calculates vertical distance between experiment data and polyfit line
-                diffs[j] = diff
-            else:
-                k = j
-                break
-
-    wanted_mean = 0 #The mean is 0 because the distance is 0 if the experiment data point is on the model
-    z_scores = (diffs-wanted_mean)/np.std(diffs)
-
-    max_value = 3 #0 as min and 3 as max value, because 3*std is when the value is "outside" the normal distribution
-    min_value = 0
-    z_scores_norm = (np.abs(z_scores) -min_value)/(max_value-min_value) 
-    uncertainty = np.array([exp_data[0], exp_data[1], 1-z_scores_norm])
-
-    return uncertainty, exec_data, diffs
+    
+    return exp_data,exec_data
 
 def PlotData(exec_data,uncertainty):
     #Plot data
