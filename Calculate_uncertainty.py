@@ -1,21 +1,53 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-def datastrToArray(str): 
-    values_str = str.replace('[', '').replace(']', '').split(', ')
+def dataFloatTypeToArray(dataStr): 
+    values_str = dataStr.replace('[', '').replace(']', '').split(', ')
     values = [float(i) for i in values_str]
     return np.array(values)
+
+def dataStrTypeToList(dataStr):
+    values_str = dataStr.replace('[', '').replace(']', '').replace('"', '').split(', ')
+    values = [str(i) for i in values_str]
+    return values
 
 def normalizeArray(ar):
     return (ar - np.amin(ar))/(np.amax(ar)- np.amin(ar))
 
-def CalculateUncertainty(my_execution):
-    exp_data, exec_data = FormatData(my_execution)
 
+def ApproximateStd(my_execution, my_sciexpem):
+    exp = my_execution.experiment
+    exp_type = my_execution.experiment.experiment_type
+    exp_fuels = dataStrTypeToList(my_execution.experiment.fuels)
+    exp_reactor = my_execution.experiment.reactor
+    my_experiments = my_sciexpem.filterDatabase(model_name = 'Experiment', experiment_type=exp_type, fuels=exp_fuels, reactor=exp_reactor)
+    
+    exec_list = []
+    for exp in my_experiments:
+        my_execs = my_sciexpem.filterDatabase(model_name='Execution', experiment=exp.id)
+        for exec in my_execs:
+            if exec.chemModel.name == my_execution.chemModel.name:
+                exec_list.append(exec)
+    
+    errors = []
+    for i in range(0,len(exec_list)):
+        exp_data, exec_data = FormatData(exec_list[i])
+        diffs = CalculateErrors(exp_data, exec_data)
+        errors.append(diffs)
+    
+    errors_np = np.array(errors, dtype=object)
+    stack_errors = np.hstack(errors_np)
+    standard_deviation = np.std(stack_errors)
+
+    return standard_deviation
+
+def CalculateUncertainty(my_execution, my_sciexpem):
+    exp_data, exec_data = FormatData(my_execution)
+    standard_deviation = ApproximateStd(my_execution, my_sciexpem)
     diffs = CalculateErrors(exp_data, exec_data)
 
     wanted_mean = 0 #The mean is 0 because the distance is 0 if the experiment data point is on the model
-    z_scores = (diffs-wanted_mean)/np.std(diffs)
+    z_scores = (diffs-wanted_mean)/standard_deviation
 
     max_value = 3 #0 as min and 3 as max value, because 3*std is when the value is "outside" the normal distribution
     min_value = 0
@@ -45,8 +77,8 @@ def FormatData(my_execution):
     exec_data_x = my_execution.execution_columns[0].data
     exec_data_y = my_execution.execution_columns[1].data
     if (isinstance(my_execution.execution_columns[0].data, str)):
-        exec_data_x = datastrToArray(my_execution.execution_columns[0].data)
-        exec_data_y = datastrToArray(my_execution.execution_columns[1].data)
+        exec_data_x = dataFloatTypeToArray(my_execution.execution_columns[0].data)
+        exec_data_y = dataFloatTypeToArray(my_execution.execution_columns[1].data)
     exec_data_norm_x = normalizeArray(exec_data_x)
     exec_data_norm_y = normalizeArray(exec_data_y)
 
@@ -54,8 +86,8 @@ def FormatData(my_execution):
     exp_data_x = my_execution.experiment.data_columns[1].data
     exp_data_y = my_execution.experiment.data_columns[0].data
     if (isinstance(my_execution.experiment.data_columns[1].data, str)):
-        exp_data_x = datastrToArray(my_execution.experiment.data_columns[1].data)
-        exp_data_y = datastrToArray(my_execution.experiment.data_columns[0].data)
+        exp_data_x = dataFloatTypeToArray(my_execution.experiment.data_columns[1].data)
+        exp_data_y = dataFloatTypeToArray(my_execution.experiment.data_columns[0].data)
     exp_data_norm_x = normalizeArray(exp_data_x)
     exp_data_norm_y = normalizeArray(exp_data_y)
 

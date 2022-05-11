@@ -17,7 +17,7 @@ my_sciexpem.testConnection(verbose = True)
 #my_exp = my_sciexpem.filterDatabase(model_name = 'Experiment', id = '201')[0]
 #my_sciexpem.initializeSimulation(experiment=my_exp.id, chemModel=24, verbose = True)
 #my_execution = my_sciexpem.filterDatabase(model_name='Execution', id='4366')[0]
-#uncertainty,exec_data, test = CalculateUncertainty(my_execution)
+#uncertainty,exec_data, test = CalculateUncertainty(my_execution, my_sciexpem)
 #PlotData(exec_data,uncertainty)
 
 my_experiments = my_sciexpem.filterDatabase(model_name = 'Experiment', experiment_type='ignition delay measurement', fuels=['H2'])
@@ -36,7 +36,7 @@ exec_data_list = []
 errors = []
 year_uncer = {}
 for i in range(0,len(exec_list)):
-    uncertainty, exec_data, diffs = CalculateUncertainty(exec_list[i])
+    uncertainty, exec_data, diffs = CalculateUncertainty(exec_list[i], my_sciexpem)
     exp_uncertanties.append(uncertainty)
     exec_data_list.append(exec_data)
     errors.append(diffs)
@@ -46,7 +46,8 @@ for i in range(0,len(exec_list)):
         year_uncer[exec_list[i].experiment.file_paper.year] = uncertainty[2]
     else:
         year_uncer[exec_list[i].experiment.file_paper.year] = np.append(year_uncer[exec_list[i].experiment.file_paper.year], uncertainty[2])
-#TEST
+
+#TEST AND CHECK PLOTS
 #for i in range(len(exp_uncertanties)):
 #    PlotData(exec_data_list[i], exp_uncertanties[i])
 
