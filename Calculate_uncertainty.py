@@ -65,7 +65,7 @@ def PlotData(exec_data,uncertainty):
     plt.plot(exec_data[0], exec_data[1], '--', label='Model')
     plt.plot(uncertainty[0], uncertainty[1], '.', label='Experiment')
     for i in range(0,len(uncertainty[2])):
-        if uncertainty[2,i] <= 0 or uncertainty[2,i] >= 1:
+        if uncertainty[2,i] <= 0:
             plt.annotate("Outlier ({:.2f})".format(uncertainty[2,i]), (uncertainty[0,i],uncertainty[1,i]))
         else:
             plt.annotate("{:.2f}".format(uncertainty[2,i]), (uncertainty[0,i],uncertainty[1,i]))
