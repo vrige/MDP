@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import pylab
 from SciExpeM_API.SciExpeM import SciExpeM
 from scipy.stats import norm, probplot, shapiro
-from Calculate_uncertainty import CalculateUncertainty, PlotData, normalizeArray
+from Calculate_uncertainty import CalculateUncertainty, PlotData
 
 
 #my_sciexpem = SciExpeM(username='alexandersebastian.bjorklund', password='mdp2022_')

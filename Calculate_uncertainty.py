@@ -1,5 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import pandas as pd
+from os.path import exists
 
 def dataFloatTypeToArray(dataStr): 
     values_str = dataStr.replace('[', '').replace(']', '').split(', ')
@@ -14,32 +16,69 @@ def dataStrTypeToList(dataStr):
 def normalizeArray(ar):
     return (ar - np.amin(ar))/(np.amax(ar)- np.amin(ar))
 
+def CheckIfExpInCsv(exec):
+    exp = exec.experiment
+    exp_t = exp.experiment_type
+    exp_f = dataStrTypeToList(exp.fuels)
+    exp_r = exp.reactor
+
+    if exists('experiment_stds.csv'):
+        df = pd.read_csv('experiment_stds.csv')
+        if not df.empty:
+            exp = df.loc[(df['Type'] == exp_t) & (df['Reactor'] == exp_r) & (df['Fuels'] == exp_f)]
+            if not exp.empty:
+                return float(exp['std'])
+            else:
+                return 0
+        else:
+            return 0
+    else:
+        print("Collection of standard deviations per experiment group does not exist!")
+        return 0
 
 def ApproximateStd(my_execution, my_sciexpem):
+    standard_deviation = CheckIfExpInCsv(my_execution)
+    if not standard_deviation:
+        standard_deviation = CalulateStdForExpGroup(my_execution, my_sciexpem)
+    return standard_deviation
+
+def CalulateStdForExpGroup(my_execution, my_sciexpem):
     exp = my_execution.experiment
-    exp_type = my_execution.experiment.experiment_type
-    exp_fuels = dataStrTypeToList(my_execution.experiment.fuels)
-    exp_reactor = my_execution.experiment.reactor
+    exp_type = exp.experiment_type
+    exp_fuels = dataStrTypeToList(exp.fuels)
+    exp_reactor = exp.reactor
     my_experiments = my_sciexpem.filterDatabase(model_name = 'Experiment', experiment_type=exp_type, fuels=exp_fuels, reactor=exp_reactor)
-    
+        
     exec_list = []
     for exp in my_experiments:
         my_execs = my_sciexpem.filterDatabase(model_name='Execution', experiment=exp.id)
         for exec in my_execs:
             if exec.chemModel.name == my_execution.chemModel.name:
                 exec_list.append(exec)
-    
+        
     errors = []
     for i in range(0,len(exec_list)):
         exp_data, exec_data = FormatData(exec_list[i])
         diffs = CalculateErrors(exp_data, exec_data)
         errors.append(diffs)
-    
+        
     errors_np = np.array(errors, dtype=object)
     stack_errors = np.hstack(errors_np)
     standard_deviation = np.std(stack_errors)
+    AddStdToCsv(exp_type, exp_reactor, exp_fuels, standard_deviation)
 
     return standard_deviation
+
+def AddStdToCsv(exp_t, exp_r, exp_f,std):
+    data = {
+    'Type': exp_t,
+    'Reactor': exp_r,
+    'Fuels': exp_f,
+    'std': std }
+
+    df = pd.DataFrame(data)
+    df.to_csv('experiment_stds.csv', mode='a', index=False, header=False)
+
 
 def CalculateUncertainty(my_execution, my_sciexpem):
     exp_data, exec_data = FormatData(my_execution)
