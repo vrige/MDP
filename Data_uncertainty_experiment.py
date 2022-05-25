@@ -5,7 +5,7 @@ import pylab
 from SciExpeM_API.SciExpeM import SciExpeM
 from scipy.stats import norm, probplot, shapiro
 from Calculate_uncertainty import CalculateUncertainty, PlotData
-
+from scipy.stats import t
 
 #my_sciexpem = SciExpeM(username='alexandersebastian.bjorklund', password='mdp2022_')
 #print("My token is:", my_sciexpem.user.token)
@@ -91,5 +91,18 @@ print("Statistics: ", shapiro_test.statistic)
 print("Pvalue: ", shapiro_test.pvalue)
 probplot(rng, dist="norm", plot=pylab)
 pylab.show()
-exit()
+
+m = np.mean(stack_errors)
+s = np.std(stack_errors)
+dof = len(stack_errors)-1
+print("Mean: ",m)
+confidence = 0.95
+t_crit = np.abs(t.ppf((1-confidence)/2,dof))
+print(m-s*t_crit/np.sqrt(len(stack_errors)), m+s*t_crit/np.sqrt(len(stack_errors)))
+values = [np.random.choice(stack_errors,size=len(stack_errors),replace=True).mean() for i in range(1000)]
+print(np.percentile(values,[100*(1-confidence)/2,100*(1-(1-confidence)/2)]))
+
+# fig, ax = plt.subplots()
+# ax.plot(,y)
+# ax.fill_between(x, (y-ci), (y+ci), color='b', alpha=.1)
 
