@@ -48,8 +48,8 @@ for i in range(0,len(exec_list)):
         year_uncer[exec_list[i].experiment.file_paper.year] = np.append(year_uncer[exec_list[i].experiment.file_paper.year], uncertainty[2])
 
 #TEST AND CHECK PLOTS
-#for i in range(len(exp_uncertanties)):
-#    PlotData(exec_data_list[i], exp_uncertanties[i])
+for i in range(len(exp_uncertanties)):
+    PlotData(exec_data_list[i], exp_uncertanties[i])
 
 #Checking if there are big changes in average uncertainty between years
 for key, value in year_uncer.items():

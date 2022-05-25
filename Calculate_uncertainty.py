@@ -2,6 +2,12 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 from os.path import exists
+from scipy.stats import t
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
 
 def dataFloatTypeToArray(dataStr): 
     values_str = dataStr.replace('[', '').replace(']', '').split(', ')
@@ -109,6 +115,7 @@ def CalculateErrors(exp_data, exec_data):
             else:
                 k = j
                 break
+
     return diffs
 
 def FormatData(my_execution):
@@ -139,9 +146,39 @@ def FormatData(my_execution):
 
 def PlotData(exec_data,uncertainty):
     #Plot data
+
+    # fig, ax = plt.subplots()
+    # ax.plot(x, y)
+    # ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1)
     plt.clf
     plt.figure(1)
+    confidence = 0.95
+    dof = len(exec_data[0]) - 1
+    s = np.std(uncertainty)
+    print("STD deviation: ", s)
+    t_crit = np.abs(t.ppf((1 - confidence) / 2, dof))
+    print("T crit: ", t_crit)
+    below_y = []
+    above_y = []
+    print("Exec data: ",exec_data)
+    print("Len: ",len(exec_data[0]))
+    for item in range(len(exec_data[0])):
+        # print("Below 1: ",item[1] - s * t_crit / np.sqrt(len(exec_data)))
+        # print("Below 2: ",item[0]+(item[0] - s * t_crit / np.sqrt(len(exec_data))))
+        # print("Above 1: ", item[0] + s * t_crit / np.sqrt(len(exec_data)))
+        # print("Above 2: ", item[0] + (item[0] + s * t_crit / np.sqrt(len(exec_data))))
+        below_y.append((exec_data[1][item] - s * t_crit / np.sqrt(len(exec_data[0]))))
+        above_y.append((exec_data[1][item] + s * t_crit / np.sqrt(len(exec_data[0]))))
+    plt.plot()
+    print("ab : ",above_y)
+    print("b : ", below_y)
+    below = np.array([exec_data[0], below_y])
+    above = np.array([exec_data[0], above_y])
+    print("below:",below)
+    print("Exec:",exec_data)
     plt.plot(exec_data[0], exec_data[1], '--', label='Model')
+    plt.plot(below[0], below[1], '--', label='Below')
+    plt.plot(above[0], above[1], '--', label='Above')
     plt.plot(uncertainty[0], uncertainty[1], '.', label='Experiment')
     for i in range(0,len(uncertainty[2])):
         if uncertainty[2,i] <= 0:
@@ -153,3 +190,8 @@ def PlotData(exec_data,uncertainty):
     plt.ylabel("Normalized Ignition delay")
     plt.legend(loc="upper right")
     plt.show()
+    # create random data
+    np.random.seed(0)
+    # create regression plot
+    # x, y = np.random.multivariate_normal(mean, cov, 80).T
+    # ax = sns.regplot(exec_data[1], uncertainty[1], ci=80)
