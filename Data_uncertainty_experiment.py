@@ -1,4 +1,5 @@
 from cmath import exp
+import csv
 import numpy as np
 from matplotlib import pyplot as plt
 import pylab
@@ -22,13 +23,16 @@ my_sciexpem.testConnection(verbose = True)
 
 my_experiments = my_sciexpem.filterDatabase(model_name = 'Experiment', experiment_type='ignition delay measurement', fuels=['H2'])
 
+with open('./csv_uncertainty.csv', 'a+') as f:
+    writer = csv.writer(f)
+    writer.writerow(["experiment_id","year","author","name","model_id","x","y","uncertainty","error"])
 #Filtering the database for experiements with the experiment type "ignition delay measurement" and fuels H2
 exec_list = []
 for exp in my_experiments:
     my_executions = my_sciexpem.filterDatabase(model_name='Execution', experiment=exp.id)
     for exec in my_executions:
-        if exec.chemModel.name == 'CRECK_2100_PAH_2110_AN':
-            exec_list.append(exec)
+        # if exec.chemModel.name in ['KAUST_2018','Glasborg_2018','Blanquat_2009','C3V3_PAH_HT','CRECK_2100_PAH','CRECK_2106_PRF','CRECK_2106_SOOT','CRECK_2106_PRF_2']:
+        exec_list.append(exec)
 
 #Calculating the uncertanties for the experiment data
 exp_uncertanties = []
@@ -48,8 +52,8 @@ for i in range(0,len(exec_list)):
         year_uncer[exec_list[i].experiment.file_paper.year] = np.append(year_uncer[exec_list[i].experiment.file_paper.year], uncertainty[2])
 
 #TEST AND CHECK PLOTS
-for i in range(len(exp_uncertanties)):
-    PlotData(exec_data_list[i], exp_uncertanties[i])
+# for i in range(len(exp_uncertanties)):
+#     PlotData(exec_data_list[i], exp_uncertanties[i])
 
 #Checking if there are big changes in average uncertainty between years
 for key, value in year_uncer.items():

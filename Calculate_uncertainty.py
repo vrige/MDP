@@ -4,7 +4,7 @@ import pandas as pd
 from os.path import exists
 from scipy.stats import t
 import numpy as np
-import seaborn as sns
+import csv
 import matplotlib.pyplot as plt
 
 
@@ -90,7 +90,6 @@ def CalculateUncertainty(my_execution, my_sciexpem):
     exp_data, exec_data = FormatData(my_execution)
     standard_deviation = ApproximateStd(my_execution, my_sciexpem)
     diffs = CalculateErrors(exp_data, exec_data)
-
     wanted_mean = 0 #The mean is 0 because the distance is 0 if the experiment data point is on the model
     z_scores = (diffs-wanted_mean)/standard_deviation
 
@@ -98,7 +97,14 @@ def CalculateUncertainty(my_execution, my_sciexpem):
     min_value = 0
     z_scores_norm = (np.abs(z_scores) -min_value)/(max_value-min_value) 
     uncertainty = np.array([exp_data[0], exp_data[1], 1-z_scores_norm])
-
+    ###creating csv
+    with open('./csv_uncertainty.csv', 'a+') as f:
+        writer = csv.writer(f)
+        for i in range(len(uncertainty[0])):
+            try:
+                writer.writerow([my_execution.experiment.id,my_execution.experiment.file_paper.year,my_execution.experiment.file_paper.author,my_execution.chemModel.name,my_execution.chemModel.id,uncertainty[0][i],uncertainty[1][i],uncertainty[2][i],diffs[i]])
+            except:
+                pass
     return uncertainty, exec_data, diffs
 
 def CalculateErrors(exp_data, exec_data):
@@ -111,6 +117,7 @@ def CalculateErrors(exp_data, exec_data):
                 p = np.polyfit(exec_data[0,i:i+2], exec_data[1,i:i+2], 1)
                 fn = np.poly1d(p)
                 diff = exp_data[1,j] - fn(exp_data[0,j]) #Calculates vertical distance between experiment data and polyfit line
+
                 diffs[j] = diff
             else:
                 k = j
@@ -149,37 +156,28 @@ def PlotData(exec_data,uncertainty):
 
     # fig, ax = plt.subplots()
     # ax.plot(x, y)
-    # ax.fill_between(x, (y - ci), (y + ci), color='b', alpha=.1)
+
     plt.clf
     plt.figure(1)
     confidence = 0.95
     dof = len(exec_data[0]) - 1
     s = np.std(uncertainty)
-    print("STD deviation: ", s)
     t_crit = np.abs(t.ppf((1 - confidence) / 2, dof))
-    print("T crit: ", t_crit)
     below_y = []
     above_y = []
-    print("Exec data: ",exec_data)
-    print("Len: ",len(exec_data[0]))
     for item in range(len(exec_data[0])):
-        # print("Below 1: ",item[1] - s * t_crit / np.sqrt(len(exec_data)))
-        # print("Below 2: ",item[0]+(item[0] - s * t_crit / np.sqrt(len(exec_data))))
-        # print("Above 1: ", item[0] + s * t_crit / np.sqrt(len(exec_data)))
-        # print("Above 2: ", item[0] + (item[0] + s * t_crit / np.sqrt(len(exec_data))))
         below_y.append((exec_data[1][item] - s * t_crit / np.sqrt(len(exec_data[0]))))
         above_y.append((exec_data[1][item] + s * t_crit / np.sqrt(len(exec_data[0]))))
     plt.plot()
-    print("ab : ",above_y)
-    print("b : ", below_y)
+
     below = np.array([exec_data[0], below_y])
     above = np.array([exec_data[0], above_y])
-    print("below:",below)
-    print("Exec:",exec_data)
     plt.plot(exec_data[0], exec_data[1], '--', label='Model')
     plt.plot(below[0], below[1], '--', label='Below')
     plt.plot(above[0], above[1], '--', label='Above')
     plt.plot(uncertainty[0], uncertainty[1], '.', label='Experiment')
+    plt.fill_between(above[0], below[1], exec_data[1], color='g', alpha=.1)
+    plt.fill_between(above[0],  exec_data[1],above[1], color='g', alpha=.1)
     for i in range(0,len(uncertainty[2])):
         if uncertainty[2,i] <= 0:
             plt.annotate("Outlier ({:.2f})".format(uncertainty[2,i]), (uncertainty[0,i],uncertainty[1,i]))
