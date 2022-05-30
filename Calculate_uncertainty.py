@@ -95,7 +95,7 @@ def CalculateUncertainty(my_execution, my_sciexpem):
 
     max_value = 3 #0 as min and 3 as max value, because 3*std is when the value is "outside" the normal distribution
     min_value = 0
-    z_scores_norm = (np.abs(z_scores) -min_value)/(max_value-min_value) 
+    z_scores_norm = (np.abs(z_scores) - min_value)/(max_value-min_value)
     uncertainty = np.array([exp_data[0], exp_data[1], 1-z_scores_norm])
     ###creating csv
     with open('./csv_uncertainty.csv', 'a+') as f:
@@ -105,7 +105,7 @@ def CalculateUncertainty(my_execution, my_sciexpem):
                 writer.writerow([my_execution.experiment.id,my_execution.experiment.file_paper.year,my_execution.experiment.file_paper.author,my_execution.chemModel.name,my_execution.chemModel.id,uncertainty[0][i],uncertainty[1][i],uncertainty[2][i],diffs[i]])
             except:
                 pass
-    return uncertainty, exec_data, diffs
+    return uncertainty, exec_data, diffs, z_scores
 
 def CalculateErrors(exp_data, exec_data):
     #Approximating a line between every point in execution data and taking the vertical distance to the lines fro every experiment data point
@@ -151,7 +151,7 @@ def FormatData(my_execution):
     
     return exp_data,exec_data
 
-def PlotData(exec_data,uncertainty):
+def PlotData(exec_data,uncertainty,z_erros):
     #Plot data
 
     # fig, ax = plt.subplots()
@@ -161,7 +161,7 @@ def PlotData(exec_data,uncertainty):
     plt.figure(1)
     confidence = 0.95
     dof = len(exec_data[0]) - 1
-    s = np.std(uncertainty)
+    s = np.std(z_erros)
     t_crit = np.abs(t.ppf((1 - confidence) / 2, dof))
     below_y = []
     above_y = []

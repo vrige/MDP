@@ -31,17 +31,19 @@ exec_list = []
 for exp in my_experiments:
     my_executions = my_sciexpem.filterDatabase(model_name='Execution', experiment=exp.id)
     for exec in my_executions:
-        # if exec.chemModel.name in ['KAUST_2018','Glasborg_2018','Blanquat_2009','C3V3_PAH_HT','CRECK_2100_PAH','CRECK_2106_PRF','CRECK_2106_SOOT','CRECK_2106_PRF_2']:
-        exec_list.append(exec)
+        if exec.chemModel.name in ['KAUST_2018','Glasborg_2018','Blanquat_2009','C3V3_PAH_HT','CRECK_2100_PAH','CRECK_2106_PRF','CRECK_2106_SOOT','CRECK_2106_PRF_2']:
+            exec_list.append(exec)
 
 #Calculating the uncertanties for the experiment data
 exp_uncertanties = []
 exec_data_list = []
 errors = []
 year_uncer = {}
+list_diffs = []
 for i in range(0,len(exec_list)):
-    uncertainty, exec_data, diffs = CalculateUncertainty(exec_list[i], my_sciexpem)
+    uncertainty, exec_data, diffs, z_diffs = CalculateUncertainty(exec_list[i], my_sciexpem)
     exp_uncertanties.append(uncertainty)
+    list_diffs.append(z_diffs)
     exec_data_list.append(exec_data)
     errors.append(diffs)
 
@@ -52,8 +54,8 @@ for i in range(0,len(exec_list)):
         year_uncer[exec_list[i].experiment.file_paper.year] = np.append(year_uncer[exec_list[i].experiment.file_paper.year], uncertainty[2])
 
 #TEST AND CHECK PLOTS
-# for i in range(len(exp_uncertanties)):
-#     PlotData(exec_data_list[i], exp_uncertanties[i])
+for i in range(15):
+    PlotData(exec_data_list[i], exp_uncertanties[i],list_diffs[i])
 
 #Checking if there are big changes in average uncertainty between years
 for key, value in year_uncer.items():
