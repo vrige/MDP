@@ -23,9 +23,11 @@ my_sciexpem.testConnection(verbose = True)
 
 my_experiments = my_sciexpem.filterDatabase(model_name = 'Experiment', experiment_type='ignition delay measurement', fuels=['H2'])
 
+#Initiate CSV file to write to
 with open('./csv_uncertainty.csv', 'a+') as f:
     writer = csv.writer(f)
     writer.writerow(["experiment_id","year","author","name","model_id","x","y","uncertainty","error"])
+
 #Filtering the database for experiements with the experiment type "ignition delay measurement" and fuels H2
 exec_list = []
 for exp in my_experiments:
@@ -57,7 +59,7 @@ for i in range(0,len(exec_list)):
 for i in range(15):
     PlotData(exec_data_list[i], exp_uncertanties[i],list_diffs[i])
 
-#Checking if there are big changes in average uncertainty between years
+#Checking if there are big changes in average uncertainty between years by visualization
 for key, value in year_uncer.items():
     avg = np.average(value)
     year_uncer[key] = np.average(value)
@@ -82,6 +84,7 @@ print("The mean of the errors/distances {:.2f}".format(np.mean(stack_errors)))
 
 rng = np.arange(np.amin(stack_errors), np.amax(stack_errors), 0.1) #Creating range for gaussian curve for reference
 
+#Plotting histogram for errors together with gaussian curve for visualization purposes
 plt.clf
 plt.figure(2)
 plt.hist(stack_errors, bins=20, rwidth=0.8, density=True)
@@ -91,6 +94,7 @@ plt.xlabel("Euqlidian distance")
 plt.ylabel("Number of instances")
 plt.show()
 
+#Using shapiro test to check if errors are normally distributed
 shapiro_test = shapiro(rng)
 print("Statistics: ", shapiro_test.statistic)
 #Null hypothesis H0: error is normally distributed
