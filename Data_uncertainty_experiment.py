@@ -23,9 +23,11 @@ my_sciexpem.testConnection(verbose = True)
 
 my_experiments = my_sciexpem.filterDatabase(model_name = 'Experiment', experiment_type='ignition delay measurement', fuels=['H2'])
 
+#Initiate CSV file to write to
 with open('./csv_uncertainty.csv', 'a+') as f:
     writer = csv.writer(f)
     writer.writerow(["experiment_id","year","author","name","model_id","x","y","uncertainty","error"])
+
 #Filtering the database for experiements with the experiment type "ignition delay measurement" and fuels H2
 exec_list = []
 for exp in my_experiments:
@@ -41,9 +43,9 @@ errors = []
 year_uncer = {}
 for i in range(0,len(exec_list)):
     uncertainty, exec_data, diffs = CalculateUncertainty(exec_list[i], my_sciexpem)
-    exp_uncertanties.append(uncertainty)
-    exec_data_list.append(exec_data)
-    errors.append(diffs)
+    exp_uncertanties.append(uncertainty) #Collecting uncertainties to a list for later use
+    exec_data_list.append(exec_data) #Collecting execution data to a list for later use
+    errors.append(diffs) #Collecting euqlidian distances/errors to a list for later use
 
     #Collect year and corresponding uncertainty data
     if exec_list[i].experiment.file_paper.year not in year_uncer.keys():
@@ -51,11 +53,11 @@ for i in range(0,len(exec_list)):
     else:
         year_uncer[exec_list[i].experiment.file_paper.year] = np.append(year_uncer[exec_list[i].experiment.file_paper.year], uncertainty[2])
 
-#TEST AND CHECK PLOTS
+#Check plots for exepriment and execution data collected
 # for i in range(len(exp_uncertanties)):
 #     PlotData(exec_data_list[i], exp_uncertanties[i])
 
-#Checking if there are big changes in average uncertainty between years
+#Checking if there are big changes in average uncertainty between years by visualization
 for key, value in year_uncer.items():
     avg = np.average(value)
     year_uncer[key] = np.average(value)
@@ -80,6 +82,7 @@ print("The mean of the errors/distances {:.2f}".format(np.mean(stack_errors)))
 
 rng = np.arange(np.amin(stack_errors), np.amax(stack_errors), 0.1) #Creating range for gaussian curve for reference
 
+#Plotting histogram for errors together with gaussian curve for visualization purposes
 plt.clf
 plt.figure(2)
 plt.hist(stack_errors, bins=20, rwidth=0.8, density=True)
@@ -89,6 +92,7 @@ plt.xlabel("Euqlidian distance")
 plt.ylabel("Number of instances")
 plt.show()
 
+#Using shapiro test to check if errors are normally distributed
 shapiro_test = shapiro(rng)
 print("Statistics: ", shapiro_test.statistic)
 #Null hypothesis H0: error is normally distributed
