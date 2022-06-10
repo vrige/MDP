@@ -9,7 +9,7 @@ There is one python file consisting of functions that perform the calculations a
 
 Uncertainty in the model side of the project
 There are two jupyter notebooks that have been included, namely:
-• curve-matching.ipynb: has the purpose of gathering the data from the Sciexpem API, creating the two datasets, one for regression and one for classification.
-• curve-matching-machine-learning.ipynb:contains the machine learning analysis conducted on the classification dataset.
-•dataset_c.csv: it is the dataset for classification and the only one to be included, since the analysis has been mainly done on it. It is obtained thanks to the curve-matching.ipynb notebook.
-•model.h5: file containing the model that yielded the best results. It's resulted from the curve-matching-machine-learning.ipynb notebook, and stems from the analysis done on the dataset_c.csv dataset
+- curve-matching.ipynb: has the purpose of gathering the data from the Sciexpem API, creating the two datasets, one for regression and one for classification.
+- curve-matching-machine-learning.ipynb:contains the machine learning analysis conducted on the classification dataset.
+- dataset_c.csv: it is the dataset for classification and the only one to be included, since the analysis has been mainly done on it. It is obtained thanks to the curve-matching.ipynb notebook.
+- model.h5: file containing the model that yielded the best results. It's resulted from the curve-matching-machine-learning.ipynb notebook, and stems from the analysis done on the dataset_c.csv dataset
